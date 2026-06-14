@@ -191,7 +191,7 @@ The agent extracts the search constraints: description = "vintage graphic tee", 
 **Step 2:**
 <!-- What happens next? What was returned from step 1? What tool is called now? 
 -->
-search_listings returns matching listings from listings.json, including item id, title, description, category, size, condition, price, colors, brand, and platform. The agent selects the best match and stores it in session state.
+suggest_outfit is call next and  returns matching listings from listings.json, including item id, title, description, category, size, condition, price, colors, brand, and platform. The agent selects the best match and stores it in session state.
 
 **Step 3:**
 <!-- Continue until the full interaction is complete -->
