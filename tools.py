@@ -44,33 +44,50 @@ def search_listings(
     """
     Search the mock listings dataset for items matching the description,
     optional size, and optional price ceiling.
-
-    Args:
-        description: Keywords describing what the user is looking for
-                     (e.g., "vintage graphic tee").
-        size:        Size string to filter by, or None to skip size filtering.
-                     Matching is case-insensitive (e.g., "M" matches "S/M").
-        max_price:   Maximum price (inclusive), or None to skip price filtering.
-
-    Returns:
-        A list of matching listing dicts, sorted by relevance (best match first).
-        Returns an empty list if nothing matches — does NOT raise an exception.
-
-    Each listing dict has the following fields:
-        id, title, description, category, style_tags (list), size,
-        condition, price (float), colors (list), brand, platform
-
-    TODO:
-        1. Load all listings with load_listings().
-        2. Filter by max_price and size (if provided).
-        3. Score each remaining listing by keyword overlap with `description`.
-        4. Drop any listings with a score of 0 (no relevant matches).
-        5. Sort by score, highest first, and return the listing dicts.
-
-    Before writing code, fill in the Tool 1 section of planning.md.
     """
-    # Replace this with your implementation
-    return []
+    listings = load_listings()
+
+    if not description or not description.strip():
+        return []
+
+    keywords = description.lower().strip().split()
+    matches = []
+
+    for item in listings:
+        # Price filter
+        if max_price is not None and item["price"] > max_price:
+            continue
+
+        # Size filter
+        if size is not None:
+            user_size = size.lower().strip()
+            item_size = str(item.get("size", "")).lower()
+
+            if user_size not in item_size:
+                continue
+        searchable_text = " ".join([
+            str(item.get("title") or ""),
+            str(item.get("description") or ""),
+            str(item.get("category") or ""),
+            str(item.get("brand") or ""),
+            str(item.get("platform") or ""),
+            " ".join(item.get("style_tags") or []),
+            " ".join(item.get("colors") or []),
+        ]).lower()
+        score = 0
+
+        for word in keywords:
+            if word in searchable_text:
+                score += 1
+
+        if score > 0:
+            item_with_score = dict(item)
+            item_with_score["score"] = score
+            matches.append(item_with_score)
+
+    matches.sort(key=lambda item: item["score"], reverse=True)
+
+    return matches
 
 
 # ── Tool 2: suggest_outfit ────────────────────────────────────────────────────
@@ -135,3 +152,22 @@ def create_fit_card(outfit: str, new_item: dict) -> str:
     """
     # Replace this with your implementation
     return ""
+
+if __name__ == "__main__":
+    results = search_listings("vintage graphic tee", size=None, max_price=50)
+
+    print(f"Found {len(results)} result(s).")
+
+    for item in results[:5]:
+        print("=" * 60)
+        print(item["title"])
+        print("Price:", item["price"])
+        print("Size:", item["size"])
+        print("Score:", item["score"])
+
+    print("\nFirst result dictionary:\n")
+    print(results[0])
+
+    print("\nFailure test:")
+    no_results = search_listings("designer ballgown", size="XXS", max_price=5)
+    print(no_results)
