@@ -220,7 +220,7 @@ Requirements:
     )
 
     return response.choices[0].message.content
-
+#For quick testing of the tools without running the full agent loop, you can run this file directly. It will execute a simple flow of searching for listings, suggesting an outfit, and creating a fit card, printing the results at each step.
 if __name__ == "__main__":
     results = search_listings("vintage graphic tee", size=None, max_price=50)
     new_item = results[0]
