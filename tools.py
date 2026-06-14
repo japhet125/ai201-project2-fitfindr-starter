@@ -174,39 +174,56 @@ Keep the tone friendly, stylish, and practical.
 def create_fit_card(outfit: str, new_item: dict) -> str:
     """
     Generate a short, shareable outfit caption for the thrifted find.
-
-    Args:
-        outfit:   The outfit suggestion string from suggest_outfit().
-        new_item: The listing dict for the thrifted item.
-
-    Returns:
-        A 2–4 sentence string usable as an Instagram/TikTok caption.
-        If outfit is empty or missing, return a descriptive error message
-        string — do NOT raise an exception.
-
-    The caption should:
-    - Feel casual and authentic (like a real OOTD post, not a product description)
-    - Mention the item name, price, and platform naturally (once each)
-    - Capture the outfit vibe in specific terms
-    - Sound different each time for different inputs (use higher LLM temperature)
-
-    TODO:
-        1. Guard against an empty or whitespace-only outfit string.
-        2. Build a prompt that gives the LLM the item details and the outfit,
-           and asks for a caption matching the style guidelines above.
-        3. Call the LLM and return the response.
-
-    Before writing code, fill in the Tool 3 section of planning.md.
     """
-    # Replace this with your implementation
-    return ""
+    if not outfit or not outfit.strip():
+        return "I can't create a fit card because the outfit suggestion is missing."
+
+    client = _get_groq_client()
+
+    item_title = new_item.get("title", "this thrifted item")
+    price = new_item.get("price", "unknown price")
+    platform = new_item.get("platform") or "secondhand platform"
+    colors = ", ".join(new_item.get("colors") or [])
+    style_tags = ", ".join(new_item.get("style_tags") or [])
+
+    prompt = f"""
+Create a short social-media-style outfit caption.
+
+Thrifted item:
+- Title: {item_title}
+- Price: ${price}
+- Platform: {platform}
+- Colors: {colors}
+- Style tags: {style_tags}
+
+Outfit suggestion:
+{outfit}
+
+Requirements:
+- 2 to 4 sentences only
+- Casual and authentic, like an OOTD post
+- Mention the item name, price, and platform naturally once
+- Capture the outfit vibe in specific terms
+- Do not sound like a formal product description
+"""
+
+    response = client.chat.completions.create(
+        model="llama-3.3-70b-versatile",
+        messages=[
+            {
+                "role": "system",
+                "content": "You write casual, stylish, social-media-ready outfit captions.",
+            },
+            {"role": "user", "content": prompt},
+        ],
+        temperature=0.8,
+    )
+
+    return response.choices[0].message.content
 
 if __name__ == "__main__":
     results = search_listings("vintage graphic tee", size=None, max_price=50)
     new_item = results[0]
-
-    print("Selected item:")
-    print(new_item["title"])
 
     test_wardrobe = {
         "items": [
@@ -222,12 +239,6 @@ if __name__ == "__main__":
                 "colors": ["white"],
                 "style_tags": ["streetwear", "casual"],
             },
-            {
-                "name": "Black mini shoulder bag",
-                "category": "accessories",
-                "colors": ["black"],
-                "style_tags": ["y2k"],
-            },
         ]
     }
 
@@ -236,6 +247,12 @@ if __name__ == "__main__":
     print("\nOutfit suggestion:\n")
     print(outfit)
 
-    print("\nEmpty wardrobe test:\n")
-    empty_outfit = suggest_outfit(new_item, {"items": []})
-    print(empty_outfit)
+    fit_card = create_fit_card(outfit, new_item)
+
+    print("\nFit card:\n")
+    print(fit_card)
+
+    print("\nMissing outfit test:\n")
+    print(create_fit_card("", new_item))
+
+    
